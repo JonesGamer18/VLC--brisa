@@ -40,7 +40,7 @@ class FirebaseConnector:
                 cls._instance = firestore.client()
                 
             except Exception as e:
-                print("🔥 Erro ao configurar Firebase:")
+                print("Erro ao configurar Firebase:")
                 print(f"Tipo: {type(e).__name__}")
                 print(f"Detalhes: {str(e)}")
                 raise
