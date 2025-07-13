@@ -35,7 +35,7 @@ def loop_principal():
             freq = detectar_frequencia()
             print(f"\n? FrequÃªncia detectada: {freq:.2f} Hz")
             mostrar_produtos_por_frequencia(freq)
-            time.sleep(0.5) 
+            time.sleep(10) 
 
     except KeyboardInterrupt:
         print("\n Encerrando sistema...")

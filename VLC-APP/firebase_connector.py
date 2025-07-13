@@ -14,7 +14,7 @@ class FirebaseConnector:
                 config_path = current_dir / 'firebase_config.json'
 
                 if not config_path.exists():
-                    raise FileNotFoundError(f"Arquivo firebase_config.json nï¿½o encontrado em: {config_path}")
+                    raise FileNotFoundError(f"Arquivo firebase_config.json não encontrado em: {config_path}")
 
                 with open(config_path) as f:
                     config = json.load(f)
