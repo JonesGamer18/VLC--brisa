@@ -1,0 +1,9 @@
+<RCC>
+  <qresource prefix="Produtos">
+    <file>Cafe.png</file>
+    <file>Maca.png</file>
+    <file>Ofertas.qrc</file>
+    <file>Pizza.png</file>
+    <file>Whey protein.png</file>
+  </qresource>
+</RCC>
