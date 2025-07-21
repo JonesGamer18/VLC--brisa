@@ -1,7 +1,11 @@
 from vlc_reader import detectar_frequencia
 from offers_service import OffersService
 from firebase_connector import FirebaseConnector
-import time
+import firebase_admin
+from firebase_admin import firestore
+import time  
+
+ID_CARRINHO_FIXO = "cr001"  
 
 def encontrar_hotspot_por_frequencia(freq_detectada):
     db = FirebaseConnector()
@@ -9,36 +13,56 @@ def encontrar_hotspot_por_frequencia(freq_detectada):
     for doc in hotspots:
         data = doc.to_dict()
         if abs(data.get('frequency', 0) - freq_detectada) <= 5:
-            return doc.id
+            return {
+                "id": doc.id,
+                "name": data.get("name", "sem_nome")
+            }
     return None
 
-def mostrar_produtos_por_frequencia(freq):
-    hotspot_id = encontrar_hotspot_por_frequencia(freq)
+def criar_ou_atualizar_carrinho(db, hotspot_id, ofertas):
+    carrinhos_ref = db.collection("carrinhos")
+    carrinho_doc = carrinhos_ref.document(ID_CARRINHO_FIXO)
+
+    if not carrinho_doc.get().exists:
+        print("Criando novo carrinho...")
+        carrinho_doc.set({
+            "localizacaoAtual": hotspot_id if hotspot_id else "desconhecido",
+            "ofertasExibidas": ofertas,
+            "tempoDeSessao": 12
+        })
+    else:
+        print("Atualizando carrinho existente...")
+        carrinho_doc.update({
+            "localizacaoAtual": hotspot_id if hotspot_id else "desconhecido",
+            "ofertasExibidas": ofertas,
+            "tempoDeSessao": 12
+        })
+
+def enviar_frequencia_para_banco():
+    freq = detectar_frequencia()
+    print(f"\nFrequência detectada: {freq:.2f} Hz")
+
+    hotspot_info = encontrar_hotspot_por_frequencia(freq)
+    nome_hotspot = hotspot_info["name"] if hotspot_info else None
+    hotspot_id = hotspot_info["id"] if hotspot_info else None
+
+    ofertas_titulos = []
     if hotspot_id:
-        print(f"\n Hotspot correspondente: {hotspot_id}")
+        print(f"Hotspot correspondente: ({hotspot_id})")
         svc = OffersService()
         produtos = svc.get_hotspot_products(hotspot_id)
-
-        print(f"\n PRODUTOS NO HOTSPOT {hotspot_id}")
-        print("=" * 60)
-        for prod in produtos:
-            print(f"\n Nome:{prod.get('title', 'Sem nome')}")
-            print(f"DescriÃ§Ã£o: {prod.get('description', '-')}")
-        print(f"\n Total de produtos encontrados: {len(produtos)}\n")
+        ofertas_titulos = [p.get("title", "sem_titulo") for p in produtos]
     else:
-        print(f"\n Nenhum hotspot encontrado para frequÃªncia {freq:.2f} Hz.")
+        print("Nenhum hotspot correspondente encontrado.")
 
-def loop_principal():
-    print("Iniciando sistema de recomendaÃ§Ã£o por VLC...\n")
-    try:
-        while True:
-            freq = detectar_frequencia()
-            print(f"\n? FrequÃªncia detectada: {freq:.2f} Hz")
-            mostrar_produtos_por_frequencia(freq)
-            time.sleep(10) 
-
-    except KeyboardInterrupt:
-        print("\n Encerrando sistema...")
+    db = FirebaseConnector()
+    criar_ou_atualizar_carrinho(db, hotspot_id, ofertas_titulos)
 
 if __name__ == "__main__":
-    loop_principal()
+    print("Sistema iniciado. Pressione Ctrl+C para encerrar.")
+    try:
+        while True:
+            enviar_frequencia_para_banco()
+            time.sleep(5) 
+    except KeyboardInterrupt:
+        print("\nSistema encerrado pelo usuário.")
